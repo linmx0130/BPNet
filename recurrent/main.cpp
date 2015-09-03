@@ -4,16 +4,20 @@
 #include <cstdlib>
 #include <ctime>
 #include "linear_algebra.h"
-const int MAX_INPUT=500;
-const int HIDDEN_N=3;
+const int MAX_INPUT=10;
+const int HIDDEN_N=70;
 const int OUTPUT_N=1;
 const int INPUT_N=2;
+const int MAX_DATA_COUNT=500;
 using std::ifstream;
 using std::cout;
 using std::endl;
 int inputCount;
 VectorT<INPUT_N> input[MAX_INPUT];
 VectorT<OUTPUT_N> teacher[MAX_INPUT];
+double data[MAX_DATA_COUNT][MAX_INPUT][3];
+int inputCountData[MAX_DATA_COUNT];
+int dataCount;
 
 MatrixT<HIDDEN_N, INPUT_N+1> Win; //weight for input
 MatrixT<HIDDEN_N, HIDDEN_N> Wxx; //internal weight for hidden layer
@@ -22,7 +26,7 @@ MatrixT<OUTPUT_N, HIDDEN_N+1> Wout; //output weight
 VectorT<HIDDEN_N> hiddenValue[MAX_INPUT];
 VectorT<HIDDEN_N> beforeHidden[MAX_INPUT];
 VectorT<OUTPUT_N> outputValue[MAX_INPUT]; // hidden and output layer -> unfold
-double hiddenDelta[MAX_INPUT][INPUT_N +HIDDEN_N+1];
+double hiddenDelta[MAX_INPUT][HIDDEN_N+1];
 double outputDelta[MAX_INPUT];
 
 template <int N>
@@ -35,9 +39,12 @@ VectorT<N> Tanh(const VectorT<N> & v){
 }
 void readInputFile(){
     ifstream fin("input");
-    fin >> inputCount;
-    for (int i=0;i<inputCount; ++i){
-        fin >> input[i].d[0] >> input[i].d[1] >>teacher[i].d[0];
+    fin >> dataCount;
+    for (int T=0;T<dataCount;++T){
+        fin >> inputCountData[T];
+        for (int i=0;i<inputCountData[T]; ++i){
+            fin >> data[T][i][0] >> data[T][i][1]>> data[T][i][2];
+        }
     }
     fin.close();
 }
@@ -67,16 +74,14 @@ void training(double LEARN_RATE){
     //compute delta on unit
     int T= inputCount-1;
     outputDelta[T] = teacher[T].d[0] - outputValue[T].d[0];
-    outputDelta[T] *=1;
-    for (int j=0;j<5;++j){
+    for (int j=0;j<3;++j){
         hiddenDelta[T][j] = outputDelta[T]*Wout.d[0][j];
         hiddenDelta[T][j] *=(1+hiddenValue[T].d[j])*(1-hiddenValue[T].d[j]);
     }
 
     for (int i=inputCount-2 ; i>=0 ;--i){
         outputDelta[i] = teacher[i].d[0] - outputValue[i].d[0];
-        outputDelta[i] *=1;
-        for (int j=0;j<5;++j){
+        for (int j=0;j<3;++j){
             hiddenDelta[i][j] = outputDelta[i]*Wout.d[0][j];
             hiddenDelta[i][j] *= (1+hiddenValue[T].d[j]) * (1-hiddenValue[T].d[j]);
         }
@@ -109,7 +114,6 @@ void training(double LEARN_RATE){
             }
             delta/=inputCount;
             Win.d[j][i]+=LEARN_RATE*delta;
-       
         }
     }
     //Win bias
@@ -129,17 +133,26 @@ void training(double LEARN_RATE){
                 delta+=hiddenValue[k-1].d[i]*hiddenDelta[k][j];
             }
             delta/=inputCount;
-            Wxx.d[j][i]+=LEARN_RATE*delta;
+            Wxx.d[j][i]+=delta;
         }
+    }
+}
+/* prepare the no.T data sequence */
+void prepareData(int T){
+    inputCount = inputCountData[T];
+    for (int i=0;i<inputCount;++i){
+        input[i].d[0]=data[T][i][0];
+        input[i].d[1]=data[T][i][1];
+        teacher[i].d[0]=data[T][i][2];
     }
 }
 template <int N,int M>
 void initMatrix(MatrixT<N,M>& m){
     for (int i=0;i<N;++i){
         for (int j=0;j<M;++j){
-            double t=rand()%10000;
-            t/=1000;
-            m.d[i][j]=t-5;
+            double t=rand()%100000;
+            t/=50000;
+            m.d[i][j]=t-1.0;
         }
     }
 }
@@ -163,10 +176,18 @@ int main(int argc, char ** argv){
     initMatrix(Wout);
     initMatrix(Wxx);
     cout <<"=== Training Started ===" <<endl;
-    for (int i=0;i<=30000;++i){
-        training(0.15);
-        if (i%200) continue;
-        cout << "Iter " << i <<": error=" <<getError() << endl;
+    for (int BigIter=0;BigIter<30;++BigIter){
+        cout <<"#BigIter "<< BigIter <<endl;
+        for (int j=0;j<dataCount;++j){
+            prepareData(j);
+            for (int i=0;i<=15000;++i){
+                training(0.001);
+                double error=getError();
+                if (error <0.02 || i %500 ==0 )
+                cout <<"Data no." <<j << " Iter " << i <<": error=" <<error << endl;
+                if (error < 0.02) break;
+            }
+        }
     }
     cout <<"=== Matrix Got ===" <<endl;
     cout << "Win=" ;
@@ -176,10 +197,16 @@ int main(int argc, char ** argv){
     cout << "Wout=" ;
     printMatrix(cout,Wout);
     cout <<"=== Compute result ===" <<endl;
-    computeNetwork();
-    for (int i=0;i<inputCount;++i){
-        cout <<"x1="<<input[i].d[0] <<" x2="<< input[i].d[1] 
-            <<" y="<<teacher[i].d[0] <<"  Model="<< outputValue[i].d[0]<<endl;
+    for (int j=0;j<dataCount;++j){
+        cout <<"#data no." <<j <<endl;
+        prepareData(j);
+        computeNetwork();
+        for (int i=0;i<inputCount;++i){
+            cout <<"x1="<<input[i].d[0] <<" x2="<< input[i].d[1] 
+                <<" y="<<teacher[i].d[0] ;
+            int t=outputValue[i].d[0]>0.5?1:0;
+            cout <<" Model="<<t<<"("<<outputValue[i].d[0]<<")"<<endl;
+        }
     }
     return 0;
 }
