@@ -5,10 +5,11 @@
 #include <ctime>
 #include "linear_algebra.h"
 const int MAX_INPUT=10;
-const int HIDDEN_N=70;
+const int HIDDEN_N=120;
 const int OUTPUT_N=1;
 const int INPUT_N=2;
 const int MAX_DATA_COUNT=500;
+const int BIG_ITER_COUNT=50;
 using std::ifstream;
 using std::cout;
 using std::endl;
@@ -176,11 +177,11 @@ int main(int argc, char ** argv){
     initMatrix(Wout);
     initMatrix(Wxx);
     cout <<"=== Training Started ===" <<endl;
-    for (int BigIter=0;BigIter<30;++BigIter){
+    for (int BigIter=0;BigIter<BIG_ITER_COUNT;++BigIter){
         cout <<"#BigIter "<< BigIter <<endl;
         for (int j=0;j<dataCount;++j){
             prepareData(j);
-            for (int i=0;i<=15000;++i){
+            for (int i=0;i<=18000;++i){
                 training(0.001);
                 double error=getError();
                 if (error <0.02 || i %500 ==0 )

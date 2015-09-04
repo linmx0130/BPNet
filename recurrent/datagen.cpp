@@ -2,13 +2,13 @@
 #include <cstring>
 #include <cstdlib>
 #include <ctime>
-#define N 5
+#define N 10
 double getDoubleRand(){
     return ((double )(rand()%10))/10;
 }
 int main(){
     srand(time(0));
-    int DCOUNT = 4;
+    int DCOUNT = 5;
     printf("%d\n",DCOUNT);
     while (DCOUNT--)
     {
