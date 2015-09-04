@@ -4,12 +4,12 @@
 #include <cstdlib>
 #include <ctime>
 #include "linear_algebra.h"
-const int MAX_INPUT=10;
+const int MAX_INPUT=15;
 const int HIDDEN_N=120;
 const int OUTPUT_N=1;
 const int INPUT_N=2;
 const int MAX_DATA_COUNT=500;
-const int BIG_ITER_COUNT=50;
+const int BIG_ITER_COUNT=30;
 using std::ifstream;
 using std::cout;
 using std::endl;
@@ -38,6 +38,14 @@ VectorT<N> Tanh(const VectorT<N> & v){
     }
     return ret;
 }
+template <int N>
+VectorT<N> Sigmoid(const VectorT<N> &v){
+    VectorT<N> ret;
+    for (int i=0;i<N;++i){
+        ret.d[i]=1.0/(1+exp(-v.d[i]));
+    }
+    return ret;
+}
 void readInputFile(){
     ifstream fin("input");
     fin >> dataCount;
@@ -53,13 +61,13 @@ void computeNetwork(){
     //start layer
     beforeHidden[0]=Win*mergeBias(input[0]);
     hiddenValue[0]=Tanh(beforeHidden[0]);
-    outputValue[0]=Wout*mergeBias(hiddenValue[0]);
+    outputValue[0]=Sigmoid(Wout*mergeBias(hiddenValue[0]));
 
     //later layers
     for (int i=1;i<inputCount;++i){
         beforeHidden[i]= Win*mergeBias(input[i]) + Wxx * hiddenValue[i-1];
         hiddenValue[i]=Tanh(beforeHidden[i]);
-        outputValue[i]=Wout*mergeBias(hiddenValue[i]);
+        outputValue[i]=Sigmoid(Wout*mergeBias(hiddenValue[i]));
     }
 }
 double getError(){
@@ -75,6 +83,7 @@ void training(double LEARN_RATE){
     //compute delta on unit
     int T= inputCount-1;
     outputDelta[T] = teacher[T].d[0] - outputValue[T].d[0];
+    outputDelta[T] *= (1-outputValue[T].d[0]) *outputValue[T].d[0];
     for (int j=0;j<3;++j){
         hiddenDelta[T][j] = outputDelta[T]*Wout.d[0][j];
         hiddenDelta[T][j] *=(1+hiddenValue[T].d[j])*(1-hiddenValue[T].d[j]);
@@ -82,6 +91,7 @@ void training(double LEARN_RATE){
 
     for (int i=inputCount-2 ; i>=0 ;--i){
         outputDelta[i] = teacher[i].d[0] - outputValue[i].d[0];
+        outputDelta[i] *= outputValue[i].d[0] *(1-outputValue[i].d[0]);
         for (int j=0;j<3;++j){
             hiddenDelta[i][j] = outputDelta[i]*Wout.d[0][j];
             hiddenDelta[i][j] *= (1+hiddenValue[T].d[j]) * (1-hiddenValue[T].d[j]);
@@ -154,6 +164,7 @@ void initMatrix(MatrixT<N,M>& m){
             double t=rand()%100000;
             t/=50000;
             m.d[i][j]=t-1.0;
+            m.d[i][j]/=2;
         }
     }
 }
@@ -181,12 +192,12 @@ int main(int argc, char ** argv){
         cout <<"#BigIter "<< BigIter <<endl;
         for (int j=0;j<dataCount;++j){
             prepareData(j);
-            for (int i=0;i<=18000;++i){
-                training(0.001);
+            for (int i=0;i<=20000;++i){
+                training(0.01);
                 double error=getError();
-                if (error <0.02 || i %500 ==0 )
+                if (error <0.05 || i %500 ==0 )
                 cout <<"Data no." <<j << " Iter " << i <<": error=" <<error << endl;
-                if (error < 0.02) break;
+                if (error < 0.05) break;
             }
         }
     }
