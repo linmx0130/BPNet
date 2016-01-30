@@ -6,3 +6,4 @@ Back propogation algorithm demo.
 * xor-> a 3-layer network to simulate xor operation
 * dimensionalityReduction -> a 2-layer network to do linear dimensionality reduction
 * recurrent -> a simple RNN BPTT algorithm to simulate xor operation through time
+* GRU -> an implementation of Gated Recurrent Unit to simulate xor operation through time 
