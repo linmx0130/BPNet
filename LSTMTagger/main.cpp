@@ -167,7 +167,7 @@ void loadTrainData(LSTMTaggerModel &model) {
 	tagList.push_back("*");
 	while (fin.getline(buf, 45)) {
 		string tmp(buf);
-		if (tmp.length() == 0) {
+		if (tmp.length() <=2) {
 			trainData.push_back(ns);
 			ns = new Sentence();
 			continue;
@@ -208,7 +208,7 @@ void loadTestData(LSTMTaggerModel &model) {
 	Sentence* ns = new Sentence();
 	while (fin.getline(buf, 45)) {
 		string tmp(buf);
-		if (tmp.length() == 0) {
+		if (tmp.length() <=2) {
 			testData.push_back(ns);
 			ns = new Sentence();
 			continue;
@@ -320,7 +320,7 @@ void trainModel(LSTMTaggerModel &model) {
 		}
 		std::cout << "Start testing..." << std::endl;
 		char filenameBuf[512];
-		sprintf_s(filenameBuf, OUTPUT_FILE_NAME_PATTERN, iter);
+		sprintf(filenameBuf, OUTPUT_FILE_NAME_PATTERN, iter);
 		testModel(model, filenameBuf);
 		model.Bf *= SHRINK_RATE; model.Wf *= SHRINK_RATE; model.Uf *= SHRINK_RATE;
 		model.Bi *= SHRINK_RATE; model.Wi *= SHRINK_RATE; model.Ui *= SHRINK_RATE;
