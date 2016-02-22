@@ -8,3 +8,4 @@ Back propogation algorithm demo.
 * recurrent -> a simple RNN BPTT algorithm to simulate xor operation through time
 * GRU -> an implementation of Gated Recurrent Unit to simulate xor operation through time
 * LeNet -> A C++ implementation of the famous LeNet-5 with some simplifications.
+* LSTMTagger -> A simple sequence tagger using LSTM

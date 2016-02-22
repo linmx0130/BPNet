@@ -1,0 +1,9 @@
+const char *TRAIN_FILE = "train.utf8";
+const char *TEST_FILE = "test.utf8";
+const char *OUTPUT_FILE_NAME_PATTERN = "output_%d.utf8";
+const int EMBEDDING_SIZE = 50;
+const int HIDDEN_SIZE = 120;
+const int OUTPUT_SIZE = 48;
+const int ITER_COUNT = 10;
+const double LEARN_RATE = 0.02;
+const double SHRINK_RATE = 0.9995;
