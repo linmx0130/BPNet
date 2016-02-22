@@ -8,7 +8,7 @@ using std::unique_ptr;
 namespace LeNet {
 	template<int ROW, int COLUMN>
 	using dmat = Matrix<double, ROW, COLUMN>;
-	char *inputsDir = "testset/";
+	const char *inputsDir = "testset/";
 	const int DATA_COUNT = 3000;
 	dmat<28, 28> inputs[DATA_COUNT];
 	int targets[DATA_COUNT];
