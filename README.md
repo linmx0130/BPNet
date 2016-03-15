@@ -9,3 +9,4 @@ Back propogation algorithm demo.
 * GRU -> an implementation of Gated Recurrent Unit to simulate xor operation through time
 * LeNet -> A C++ implementation of the famous LeNet-5 with some simplifications.
 * LSTMTagger -> A simple sequence tagger using LSTM
+* ConvSen -> Convolution neural network for NLP
