@@ -59,6 +59,7 @@ void feedForward(Sentence *s, RunningStatus* rs) {
 			for (int j = 0; j < kernels[k]->filters.size(); ++j) {
 				rs->c[k][i] += VVEWProductSum(*s->words[i + j], *kernels[k]->filters[j]);
 			}
+			if (rs->c[k][i] < 0) rs->c[k][i] = 0;//relu
 		}
 		for (int i = 0; i < l; ++i) {
 			if (rs->c[k][i] > rs->c[k][rs->maxC[k]]) {
@@ -80,7 +81,9 @@ void trainBack(RunningStatus *rs, GradientStatus* g) {
 	g->dy.d[rs->sentence->tag] -= 1;
 
 	MVLeftMultiply(W1, g->dy, g->dz);
-
+	for (int k = 0; k < g->dz.getLength(); ++k) {
+		if (rs->z.d[k] == 0) g->dz.d[k] = 0;
+	}
 	for (int k = 0; k < KERNEL_COUNT; ++k) {
 		int maxC = rs->maxC[k];
 		for (int i = 0; i < kernels[k]->filters.size(); ++i) {
@@ -137,10 +140,10 @@ void loadData() {
 		sentences[a] = sentences[b];
 		sentences[b] = k;
 	}
-	/* 
-	 * if you want to use word2vec product to get better performence
-	 * use follow code!
-	 */
+	/*
+	* if you want to use word2vec product to get better performence
+	* use follow code!
+	*/
 #ifdef WORD2VEC_INIT
 	loadWordVector();
 #endif
