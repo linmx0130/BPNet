@@ -141,7 +141,9 @@ void loadData() {
 	 * if you want to use word2vec product to get better performence
 	 * use follow code!
 	 */
+#ifdef WORD2VEC_INIT
 	loadWordVector();
+#endif
 }
 bool isCorrect(const RunningStatus & rs) {
 	int ans = 0;

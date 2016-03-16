@@ -9,6 +9,7 @@
 #include <sstream>
 #include <ctime>
 #include <cstdlib>
+#define WORD2VEC_INIT
 using std::vector;
 using std::string;
 using namespace cornernn;

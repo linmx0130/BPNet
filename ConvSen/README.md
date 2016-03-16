@@ -8,6 +8,8 @@ Thanks to Yoon Kim, we have a convolution neural network approach to solve NLP p
 
 The input data is movie reviews. You can get data at http://www.cs.cornell.edu/people/pabo/movie-review-data/ .
 
+The code would like to use data from word2vec. If you want to disable this function, **undefine** WORD2VEC_INIT in ConvSen.h please.
+
 Maybe you need a C++14 compiler to build the program.
 
 ## Reference
