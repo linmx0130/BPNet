@@ -4,12 +4,15 @@ std::map<string, dvec<100>* > lookUp;
 vector<Sentence*> sentences;
 vector<Kernel*> kernels;
 Matrix<double, TAG_COUNT, KERNEL_COUNT> W1;
-
+dvec<TAG_COUNT> B1;
 RunningStatus runningStatus[BATCH_SIZE];
 GradientStatus gradientStatus[BATCH_SIZE];
 void loadData(const char* filename, int tag) {
 	std::ifstream fin(filename);
 	char buf[2048];
+	dvec<100> *noneVec = new dvec<100>;
+	noneVec->initToZero();
+	lookUp["~NOWORD~"] = noneVec;
 	while (fin.getline(buf,2048) ) {
 		Sentence * s = new Sentence();
 		s->tag = tag;
@@ -25,9 +28,9 @@ void loadData(const char* filename, int tag) {
 			s->words.push_back(p);
 			s->tokens.push_back(word);
 		}
-		if (s->words.size() < 5) {
-			delete s;
-			continue;
+		while (s->words.size() < 5) {
+			s->words.push_back(noneVec);
+			s->tokens.push_back("~NOWORD~");
 		}
 		sentences.push_back(s);
 	}
@@ -43,6 +46,7 @@ void initWeights() {
 		kernels.push_back(new Kernel(5));
 	}
 	W1.initToRandom(sqrt(KERNEL_COUNT));
+	B1.initToRandom(sqrt(KERNEL_COUNT));
 }
 
 void feedForward(Sentence *s, RunningStatus* rs) {
@@ -64,6 +68,7 @@ void feedForward(Sentence *s, RunningStatus* rs) {
 		rs->z.d[k] = rs->c[k][rs->maxC[k]];
 	}
 	MVRightMultiply(W1, rs->z, rs->y);
+	rs->y += B1;
 	rs->y.performSoftmax();
 }
 
@@ -90,7 +95,8 @@ void updateParameters(GradientStatus* g) {
 	Matrix <double, TAG_COUNT, KERNEL_COUNT> dW1;
 	VVOuterProduct(g->dy, g->rs->z, dW1); dW1 *= LEARN_RATE;
 	W1 -= dW1;
-
+	dvec <TAG_COUNT> dB1(g->dy); dB1 *= LEARN_RATE;
+	B1 -= dB1;
 	for (int k = 0; k < KERNEL_COUNT; ++k) {
 		int maxC = g->rs->maxC[k];
 		for (int i = 0; i < kernels[k]->filters.size(); ++i) {
@@ -100,6 +106,25 @@ void updateParameters(GradientStatus* g) {
 			}
 		}
 	}
+}
+void loadWordVector() {
+	std::ifstream fin(WORD_VEC);
+	int N, M;
+	fin >> N >> M;
+	dvec<100> tmp;
+	string buf;
+	int count = 0;
+	for (int i = 0; i < N; ++i) {
+		fin >> buf;
+		for (int j = 0; j < M; ++j) {
+			fin >>tmp.d[j];
+		}
+		if (lookUp.find(buf) != lookUp.end()) {
+			(*lookUp[buf]) = tmp;
+			count++;
+		}
+	}
+	std::cout << "Load " << count << " words form word2vec." << std::endl;
 }
 void loadData() {
 	loadData(NEG_DATA, 0);
@@ -112,6 +137,11 @@ void loadData() {
 		sentences[a] = sentences[b];
 		sentences[b] = k;
 	}
+	/* 
+	 * if you want to use word2vec product to get better performence
+	 * use follow code!
+	 */
+	loadWordVector();
 }
 bool isCorrect(const RunningStatus & rs) {
 	int ans = 0;
@@ -132,13 +162,18 @@ int main() {
 	srand(time(0));
 	initWeights();
 	loadData();
+	int dataCount = sentences.size();
+	int trainCount = dataCount*0.9;
+	int testCount = dataCount - trainCount;
 	std::cout << "Total valid data count = " << sentences.size() << std::endl;
+	std::cout << "Train count = " << trainCount << std::endl;
+	std::cout << "Test count = " << testCount << std::endl;
 	for (int iter = 0; iter < 100; ++iter) {
 		std::cout << "ITER " << iter << std::endl;
 		int ii = 0;
 		int totalCorrect = 0;
 		int correct = 0;
-		for (int i = 0; i < sentences.size(); ++i, ++ii) {
+		for (int i = 0; i < trainCount; ++i, ++ii) {
 			runningStatus[ii].init();
 			feedForward(sentences[i], &runningStatus[ii]);
 			trainBack(&runningStatus[ii], &gradientStatus[ii]);
@@ -166,7 +201,17 @@ int main() {
 			}
 			totalCorrect += correct;
 		}
-		std::cout << "ITER " << iter << ": total correct rate = " << (double)totalCorrect / sentences.size() << std::endl;
+		std::cout << "ITER " << iter << ": train total correct rate = " << (double)totalCorrect / trainCount << std::endl;
+		correct = 0;
+		for (int i = trainCount; i < dataCount; ++i) {
+			runningStatus[0].init();
+			feedForward(sentences[i], &runningStatus[0]);
+			if (isCorrect(runningStatus[0])) {
+				correct++;
+			}
+			runningStatus[0].clean();
+		}
+		std::cout << "ITER " << iter << ": test correct rate = " << (double)correct / testCount << std::endl;
 	}
 	return 0;
 }
