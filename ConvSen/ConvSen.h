@@ -19,8 +19,9 @@ const int KERNEL_4_COUNT = 100;
 const int KERNEL_5_COUNT = 100;
 const double LAMBDA = 0.0001;
 const double DROPOUT_RATE = 0.8;
-const int KERNEL_COUNT = KERNEL_3_COUNT + KERNEL_4_COUNT + KERNEL_5_COUNT;
-const int BATCH_SIZE = 40;
+const double L2_NORM_CONSTRANT = 3.0;
+const int KERNEL_COUNT = KERNEL_3_COUNT + KERNEL_4_COUNT + KERNEL_5_COUNT ;
+const int BATCH_SIZE = 50;
 const double LEARN_RATE = 0.01;
 template <int size>
 using dvec = Vector<double, size>;
@@ -41,7 +42,7 @@ struct Kernel {
 
 const char *NEG_DATA = "rt-polaritydata/rt-polarity.neg";
 const char *POS_DATA = "rt-polaritydata/rt-polarity.pos";
-const char *WORD_VEC = "word2vec_d100.txt";
+const char *WORD_VEC = "word2vec_d100.utf8";
 const int TAG_COUNT = 2;
 struct RunningStatus {
 	Sentence *sentence;

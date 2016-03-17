@@ -156,7 +156,20 @@ bool isCorrect(const RunningStatus & rs) {
 	return ans == rs.sentence->tag;
 }
 void regularization() {
-	W1 *= 1 - LAMBDA;
+	//W1 *= 1 - LAMBDA;
+	for (int i = 0; i < W1.getRowSize(); ++i) {
+		double s = 0;
+		for (int j = 0; j < W1.getColumnSize(); ++j) {
+			s += W1.d[i][j]*W1.d[i][j];
+		}
+		s = sqrt(s);
+		if (s > L2_NORM_CONSTRANT) {
+			s = L2_NORM_CONSTRANT / s;
+			for (int j = 0; j < W1.getColumnSize(); ++j) {
+				W1.d[i][j] *= s;
+			}
+		}
+	}
 	for (int i = 0; i < kernels.size(); ++i) {
 		for (int j = 0; j < kernels[i]->filters.size(); ++j) {
 			(*kernels[i]->filters[j]) *= 1 - LAMBDA;
