@@ -1,6 +1,6 @@
 #include "ConvSen.h"
 
-std::map<string, dvec<100>* > lookUp;
+std::map<string, dvec<CHAR_EMBED_SIZE>* > lookUp;
 vector<Sentence*> sentences;
 vector<Kernel*> kernels;
 Matrix<double, TAG_COUNT, KERNEL_COUNT> W1;
@@ -10,7 +10,7 @@ GradientStatus gradientStatus[BATCH_SIZE];
 void loadData(const char* filename, int tag) {
 	std::ifstream fin(filename);
 	char buf[2048];
-	dvec<100> *noneVec = new dvec<100>;
+	dvec<CHAR_EMBED_SIZE> *noneVec = new dvec<CHAR_EMBED_SIZE>;
 	noneVec->initToZero();
 	lookUp["~NOWORD~"] = noneVec;
 	while (fin.getline(buf,2048) ) {
@@ -19,9 +19,9 @@ void loadData(const char* filename, int tag) {
 		std::istringstream sp(buf);
 		string word;
 		while (sp >> word) {
-			dvec<100> * p = lookUp[word];
+			dvec<CHAR_EMBED_SIZE> * p = lookUp[word];
 			if (p== nullptr) {
-				dvec<100> *wv = new dvec<100>();
+				dvec<CHAR_EMBED_SIZE> *wv = new dvec<CHAR_EMBED_SIZE>();
 				wv->initToRandom(4);
 				p=lookUp[word] = wv;
 			}
@@ -87,7 +87,7 @@ void trainBack(RunningStatus *rs, GradientStatus* g) {
 	for (int k = 0; k < KERNEL_COUNT; ++k) {
 		int maxC = rs->maxC[k];
 		for (int i = 0; i < kernels[k]->filters.size(); ++i) {
-			dvec<100> * v= &g->dLookUp[rs->sentence->tokens[maxC+i]];
+			dvec<CHAR_EMBED_SIZE> * v= &g->dLookUp[rs->sentence->tokens[maxC+i]];
 			for (int j = 0; j < CHAR_EMBED_SIZE; ++j) {
 				v->d[j] += g->dz.d[k] * kernels[k]->filters[i]->d[j];
 			}
@@ -103,7 +103,7 @@ void updateParameters(GradientStatus* g) {
 	for (int k = 0; k < KERNEL_COUNT; ++k) {
 		int maxC = g->rs->maxC[k];
 		for (int i = 0; i < kernels[k]->filters.size(); ++i) {
-			dvec<100> *vi = g->rs->sentence->words[maxC + i];
+			dvec<CHAR_EMBED_SIZE> *vi = g->rs->sentence->words[maxC + i];
 			for (int j = 0; j < CHAR_EMBED_SIZE; ++j) {
 				kernels[k]->filters[i]->d[j] -= LEARN_RATE* g->dz.d[k] * vi->d[j];
 			}
@@ -114,7 +114,7 @@ void loadWordVector() {
 	std::ifstream fin(WORD_VEC);
 	int N, M;
 	fin >> N >> M;
-	dvec<100> tmp;
+	dvec<CHAR_EMBED_SIZE> tmp;
 	string buf;
 	int count = 0;
 	for (int i = 0; i < N; ++i) {
