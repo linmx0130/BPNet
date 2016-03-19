@@ -227,6 +227,11 @@ int main() {
 		if (ii != 0) {
 			for (int j = 0; j < ii; ++j) {
 				updateParameters(&gradientStatus[j]);
+			}
+			for (int j = 0; j < ii; ++j) {
+				updateLookUpTables(&gradientStatus[j]);
+			}
+			for (int j = 0; j < ii; ++j) {
 				runningStatus->clean();
 				runningStatus->init();
 				gradientStatus->clean();
