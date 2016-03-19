@@ -9,7 +9,7 @@
 #include <sstream>
 #include <ctime>
 #include <cstdlib>
-#define WORD2VEC_INIT
+//#define WORD2VEC_INIT
 using std::vector;
 using std::string;
 using namespace cornernn;
@@ -21,7 +21,7 @@ const double LAMBDA = 0.0001;
 const double DROPOUT_RATE = 0.8;
 const double L2_NORM_CONSTRANT = 3.0;
 const int KERNEL_COUNT = KERNEL_3_COUNT + KERNEL_4_COUNT + KERNEL_5_COUNT ;
-const int BATCH_SIZE = 50;
+const int BATCH_SIZE = 30;
 const double LEARN_RATE = 0.01;
 template <int size>
 using dvec = Vector<double, size>;

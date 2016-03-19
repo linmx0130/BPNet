@@ -154,7 +154,7 @@ namespace cornernn {
 		void initToRandom(FLOAT_TYPE divisor) {
 			for (int i = 0; i < ROW; ++i) {
 				for (int j = 0; j < COLUMN; ++j) {
-					d[i][j] = ((FLOAT_TYPE)(rand() % 10000)-5000) / 5000 /divisor;
+					d[i][j] = ((FLOAT_TYPE) (sqrt(rand() % 10000) - sqrt(5000))) / sqrt(5000) / divisor;
 				}
 			}
 		}

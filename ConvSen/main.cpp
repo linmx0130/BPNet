@@ -59,15 +59,13 @@ void feedForward(Sentence *s, RunningStatus* rs) {
 			for (int j = 0; j < kernels[k]->filters.size(); ++j) {
 				rs->c[k][i] += VVEWProductSum(*s->words[i + j], *kernels[k]->filters[j]);
 			}
-			if (rs->c[k][i] < 0) rs->c[k][i] = 0;//relu
-		}
-		for (int i = 0; i < l; ++i) {
 			if (rs->c[k][i] > rs->c[k][rs->maxC[k]]) {
 				rs->maxC[k] = i;
 			}
 		}
 		rs->z.d[k] = rs->c[k][rs->maxC[k]];
 	}
+	rs->z.perform([](double x) {return x > 0 ? x : 0; });
 	MVRightMultiply(W1, rs->z, rs->y);
 	rs->y += B1;
 	rs->y.performSoftmax();
@@ -87,6 +85,9 @@ void trainBack(RunningStatus *rs, GradientStatus* g) {
 	for (int k = 0; k < KERNEL_COUNT; ++k) {
 		int maxC = rs->maxC[k];
 		for (int i = 0; i < kernels[k]->filters.size(); ++i) {
+			if (g->dLookUp.find(rs->sentence->tokens[maxC + i]) == g->dLookUp.end()) {
+				g->dLookUp[rs->sentence->tokens[maxC + i]].initToZero();
+			}
 			dvec<CHAR_EMBED_SIZE> * v= &g->dLookUp[rs->sentence->tokens[maxC+i]];
 			for (int j = 0; j < CHAR_EMBED_SIZE; ++j) {
 				v->d[j] += g->dz.d[k] * kernels[k]->filters[i]->d[j];
@@ -108,6 +109,14 @@ void updateParameters(GradientStatus* g) {
 				kernels[k]->filters[i]->d[j] -= LEARN_RATE* g->dz.d[k] * vi->d[j];
 			}
 		}
+	}
+	
+}
+void updateLookUpTables(GradientStatus* g) {
+	for (auto iterator = g->dLookUp.cbegin(); iterator != g->dLookUp.cend(); ++iterator) {
+		dvec<CHAR_EMBED_SIZE> &dChar = g->dLookUp[iterator->first];
+		dChar *= LEARN_RATE ;
+		(*lookUp[iterator->first]) -= dChar;
 	}
 }
 void loadWordVector() {
@@ -200,7 +209,12 @@ int main() {
 			}
 			if (ii == BATCH_SIZE - 1) {
 				for (int j = 0; j < BATCH_SIZE; ++j) {
-					updateParameters(&gradientStatus[j]);
+					updateParameters(&gradientStatus[j]);	
+				}
+				for (int j = 0; j < BATCH_SIZE; ++j) {
+					updateLookUpTables(&gradientStatus[j]);
+				}
+				for (int j = 0; j < BATCH_SIZE; ++j) {
 					runningStatus[j].clean();
 					gradientStatus[j].clean();
 				}
