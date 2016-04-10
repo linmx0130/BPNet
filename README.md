@@ -10,3 +10,4 @@ Back propogation algorithm demo.
 * LeNet -> A C++ implementation of the famous LeNet-5 with some simplifications.
 * LSTMTagger -> A simple sequence tagger using LSTM
 * ConvSen -> Convolution neural network for NLP
+* BiGRU -> a bidirectional GRU Tagger
