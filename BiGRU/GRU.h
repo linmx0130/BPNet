@@ -91,6 +91,7 @@ struct GRUParam {
 		g.status = &status;
 		// temp variables
 		dvec<HIDDEN_SIZE> tmp;
+		dvec<INPUT_SIZE> tmpi;
 		dvec<HIDDEN_SIZE> gHn;
 		dvec<HIDDEN_SIZE> gZ;
 		dvec<HIDDEN_SIZE> gR;
@@ -120,8 +121,8 @@ struct GRUParam {
 		g.lastH -= gHidden * status.z;
 		//deriv input 
 		MVLeftMultiply(Wz, gZ, g.inputVec);
-		MVLeftMultiply(Wr, gR, tmp); g.inputVec += tmp;
-		MVLeftMultiply(W, gHn, tmp); g.inputVec += tmp;
+		MVLeftMultiply(Wr, gR, tmpi); g.inputVec += tmpi;
+		MVLeftMultiply(W, gHn, tmpi); g.inputVec += tmpi;
 		//deriv matrices
 		VVOuterProduct(gZ, *status.input, g.Wz);
 		VVOuterProduct(gZ, status.lastStatus->h, g.Uz);
