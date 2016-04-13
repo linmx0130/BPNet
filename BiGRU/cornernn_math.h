@@ -61,6 +61,15 @@ namespace cornernn {
 			}
 			return *this;
 		}
+        
+        Vector<FLOAT_TYPE, LEN> operator+(Vector<FLOAT_TYPE, LEN> v) const {
+			Vector<FLOAT_TYPE, LEN> ret;
+            for (int i = 0; i < LEN; ++i) {
+			    ret.d[i] = d[i] + v.d[i];
+			}
+			return ret;
+		}
+
 		Vector<FLOAT_TYPE, LEN> & operator-=(const Vector<FLOAT_TYPE, LEN> & v) {
 			for (int i = 0; i < LEN; ++i) {
 				d[i] -= v.d[i];
@@ -229,6 +238,17 @@ namespace cornernn {
 			}
 			return *this;
 		}
+        
+        Matrix <FLOAT_TYPE, ROW, COLUMN> operator + (const Matrix<FLOAT_TYPE, ROW, COLUMN> m) const {
+            Matrix<FLOAT_TYPE, ROW, COLUMN> ret;
+			for (int i = 0; i < ROW; ++i) {
+				for (int j = 0; j < COLUMN; ++j) {
+					ret.d[i][j] = d[i][j] + m.d[i][j];
+				}
+			}
+			return ret;
+		}
+
 		Matrix <FLOAT_TYPE, ROW, COLUMN> & operator -= (const Matrix<FLOAT_TYPE, ROW, COLUMN> & m) {
 			for (int i = 0; i < ROW; ++i) {
 				for (int j = 0; j < COLUMN; ++j) {

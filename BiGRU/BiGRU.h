@@ -10,7 +10,8 @@ const int FC1_SIZE = 48;
 const int TAG_SIZE = 48;
 const int BATCH_SIZE = 1;
 const double LEARN_RATE = 0.01;
-const int ITER_COUNT = 10000;
+const double WEIGHT_DECAY = 0.0001;
+const int ITER_COUNT = 100;
 const double MARGIN = 0.0;
 const extern char* START_TAG;
 struct NetworkParam {

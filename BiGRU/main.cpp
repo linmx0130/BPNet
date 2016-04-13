@@ -280,23 +280,23 @@ void normalDecoding(SentenceStatus & status) {
 }
 template <int INPUT_SIZE, int HIDDEN_SIZE>
 void updateGRU(GRUParam<INPUT_SIZE, HIDDEN_SIZE> & gru, const GRUGradient<INPUT_SIZE, HIDDEN_SIZE> &gradient, double learningRate) {
-	gru.U -= gradient.U * learningRate;
-	gru.W -= gradient.W * learningRate;
-	gru.Wr -= gradient.Wr *learningRate;
-	gru.Ur -= gradient.Ur * learningRate;
-	gru.Uz -= gradient.Uz * learningRate;
-	gru.Wz -= gradient.Wz * learningRate;
-	gru.Bz -= gradient.Bz*learningRate;
-	gru.Br -= gradient.Br *learningRate;
-	gru.Bhn -= gradient.Bhn*learningRate;
+	gru.U -= (gradient.U + gru.U * WEIGHT_DECAY) * learningRate;
+	gru.W -= (gradient.W + gru.W * WEIGHT_DECAY) * learningRate;
+	gru.Wr -= (gradient.Wr + gru.Wr * WEIGHT_DECAY) *learningRate;
+	gru.Ur -= (gradient.Ur + gru.Ur * WEIGHT_DECAY) * learningRate;
+	gru.Uz -= (gradient.Uz + gru.Uz * WEIGHT_DECAY) * learningRate;
+	gru.Wz -= (gradient.Wz + gru.Wz * WEIGHT_DECAY) * learningRate;
+	gru.Bz -= (gradient.Bz + gru.Bz * WEIGHT_DECAY) * learningRate;
+	gru.Br -= (gradient.Br + gru.Br * WEIGHT_DECAY) * learningRate;
+	gru.Bhn -= (gradient.Bhn + gru.Bhn * WEIGHT_DECAY) * learningRate;
 }
 void updateLookUpTable(const std::string & key, const dvec<EMBED_SIZE> dValue, double learningRate) {
 	auto &v = *network.lookUpTable[key];
-	v -= dValue *learningRate;
+	v -= (dValue +dValue *WEIGHT_DECAY)*learningRate;
 }
 void updateNetwork(const TokenGradient &gradient, double learningRate) {
-	network.W1 -= gradient.W1 * learningRate;
-	network.B1 -= gradient.B1*learningRate;
+	network.W1 -= (gradient.W1 + network.W1 * WEIGHT_DECAY) * learningRate;
+	network.B1 -= (gradient.B1 + network.B1 * WEIGHT_DECAY) *learningRate;
 	updateGRU(network.gru1, gradient.gru1, learningRate*2);
 	updateGRU(network.gru2, gradient.gru2, learningRate*2);
 }

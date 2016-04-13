@@ -91,7 +91,6 @@ struct GRUParam {
 		g.status = &status;
 		// temp variables
 		dvec<HIDDEN_SIZE> tmp;
-		dvec<INPUT_SIZE> tmpi;
 		dvec<HIDDEN_SIZE> gHn;
 		dvec<HIDDEN_SIZE> gZ;
 		dvec<HIDDEN_SIZE> gR;
@@ -120,6 +119,7 @@ struct GRUParam {
 		g.lastH += gHidden;
 		g.lastH -= gHidden * status.z;
 		//deriv input 
+		dvec<INPUT_SIZE> tmpi;
 		MVLeftMultiply(Wz, gZ, g.inputVec);
 		MVLeftMultiply(Wr, gR, tmpi); g.inputVec += tmpi;
 		MVLeftMultiply(W, gHn, tmpi); g.inputVec += tmpi;
