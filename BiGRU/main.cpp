@@ -3,9 +3,9 @@
 #include <fstream>
 #include <sstream>
 #include <set>
-const char * TRAIN_FILE = "pos_train.utf8";
-const char * DEV_FILE = "pos_test.utf8";
-const char * OUTPUT_FILE_ROOT = "pos_output_";
+const char * TRAIN_FILE = "ctb5_seg_train.utf8";
+const char * DEV_FILE = "ctb5_seg_test.utf8";
+const char * OUTPUT_FILE_ROOT = "seg_output_";
 struct TokenPair {
 	std::string token, tag;
 	TokenPair(std::string token, std::string tag):token(token), tag(tag) {}
@@ -59,7 +59,7 @@ void initTagList() {
 }
 NetworkParam network;
 GRUStatus<EMBED_SIZE, HIDDEN_SIZE> emptyGRUStatus;
-void initLookUpTable() {                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+void initLookUpTable() {
 	for (auto iter = tokenSet.cbegin(); iter != tokenSet.cend(); ++iter) {
 		dvec<EMBED_SIZE> *tmp = new dvec<EMBED_SIZE>;
 		tmp->initToRandom(1);
@@ -88,6 +88,7 @@ void feedForward(Sentence& sentence, SentenceStatus & status) {
 		VConcat(status.items[i]->gru1.h, status.items[i]->gru2.h, status.items[i]->concat);
 		MVRightMultiply(network.W1, status.items[i]->concat, status.items[i]->fc1);
 		status.items[i]->fc1 += network.B1;
+		//turn on for softmax decoding
 		status.items[i]->fc1.performSoftmax();
 	}
 }
@@ -190,7 +191,7 @@ int maxMarginDecoding(const Sentence & sentence, SentenceStatus & status, std::v
 		int target = tagIdMap[sentence.tokens[i].tag];
 		for (int j = 0; j < TAG_SIZE; ++j) {
 			for (int k = 0; k < TAG_SIZE; ++k) {
-				double tmpScore = status.items[i-1]->fc1.d[k] + tagTrans[k][j] + status.items[i]->fc1.d[j];
+				double tmpScore = scoreF[i-1][k] + tagTrans[k][j] + status.items[i]->fc1.d[j];
 				if (target != j) tmpScore += MARGIN;
 				if (tmpScore > scoreF[i][j]) {
 					scoreF[i][j] = tmpScore;
@@ -202,7 +203,7 @@ int maxMarginDecoding(const Sentence & sentence, SentenceStatus & status, std::v
 	//decoding 
 	predictLabel[count -1] = 0;
 	for (int j = 0; j < TAG_SIZE; ++j) {
-		if (status.items[count - 1]->fc1.d[j] > status.items[count - 1]->fc1.d[predictLabel[count - 1]]) {
+		if ( scoreF[count-1][j] > scoreF[count-1][predictLabel[count - 1]]) {
 			predictLabel[count - 1] = j;
 		}
 	}
@@ -252,7 +253,7 @@ void normalDecoding(SentenceStatus & status) {
 	for (int i = 1; i < count; ++i) {
 		for (int j = 0; j < TAG_SIZE; ++j) {
 			for (int k = 0; k < TAG_SIZE; ++k) {
-				double tmpScore = status.items[i - 1]->fc1.d[k] + tagTrans[k][j] + status.items[i]->fc1.d[j];
+				double tmpScore = scoreF[i-1][k] + tagTrans[k][j] + status.items[i]->fc1.d[j];
 				if (tmpScore > scoreF[i][j]) {
 					scoreF[i][j] = tmpScore;
 					lastTag[i][j] = k;
@@ -263,7 +264,7 @@ void normalDecoding(SentenceStatus & status) {
 	//decoding 
 	predictLabel[count - 1] = 0;
 	for (int j = 0; j < TAG_SIZE; ++j) {
-		if (status.items[count - 1]->fc1.d[j] > status.items[count - 1]->fc1.d[predictLabel[count - 1]]) {
+		if (scoreF[count - 1][j] > scoreF[count - 1][predictLabel[count - 1]]) {
 			predictLabel[count - 1] = j;
 		}
 	}
@@ -304,8 +305,10 @@ void updateTrans(const SentenceStatus& status, const Sentence& sentence, double 
 	int count = status.size();
 	int *l = status.predictLabel;
 	for (int i = 1; i < count; ++i) {
-		tagTrans[l[i - 1]][l[i]] -= learningRate;
-		tagTrans[tagIdMap[sentence.tokens[i - 1].tag]][tagIdMap[sentence.tokens[i].tag]] += learningRate;
+        double t = tagTrans[l[i - 1]][l[i]];
+		tagTrans[l[i - 1]][l[i]] -= (1 + t * WEIGHT_DECAY) * learningRate;
+        t = tagTrans[tagIdMap[sentence.tokens[i - 1].tag]][tagIdMap[sentence.tokens[i].tag]];
+		tagTrans[tagIdMap[sentence.tokens[i - 1].tag]][tagIdMap[sentence.tokens[i].tag]] -= (-1 + t * WEIGHT_DECAY) * learningRate;
 	}
 }
 void testNetwork(const char* outputFile) {
@@ -317,6 +320,7 @@ void testNetwork(const char* outputFile) {
 		status.clear();
 		feedForward(devData[item], status);
 		softmaxDecoding(status);
+		//normalDecoding(status);
 		for (int i = 0; i < status.size(); ++i) {
 			fout << devData[item].tokens[i].token << " " << tagList[status.predictLabel[i]] << std::endl;
 		}
@@ -337,6 +341,7 @@ void trainNetwork() {
 			for (current = 0; current < BATCH_SIZE && item < trainData.size(); ++current, ++item) {
 				feedForward(trainData[item], status[current]);
 				correctCount += softmaxDecoding(trainData[item], status[current], dLoss);
+				//correctCount += maxMarginDecoding(trainData[item], status[current], dLoss);
 				totalCount += trainData[item].size();
 				derivBackward(status[current], dLoss, gradient[current]);
 			}
@@ -345,7 +350,7 @@ void trainNetwork() {
 			for (current = 0; current < batch; ++current, ++item) {
 				int length = status[current].size();
 				double learningRate = LEARN_RATE; // length;
-				//updateTrans(status[current], trainData[item], learningRate);
+				updateTrans(status[current], trainData[item], learningRate);
 				for (int i = 0; i <length; ++i) {
 					updateNetwork(*gradient[current].items[i], learningRate);
 					updateLookUpTable(trainData[item].tokens[i].token, gradient[current].items[i]->gru1.inputVec ,learningRate*4);

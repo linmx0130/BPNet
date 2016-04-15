@@ -12,7 +12,7 @@ const int BATCH_SIZE = 1;
 const double LEARN_RATE = 0.01;
 const double WEIGHT_DECAY = 0.0001;
 const int ITER_COUNT = 100;
-const double MARGIN = 0.0;
+const double MARGIN = 0.2;
 const extern char* START_TAG;
 struct NetworkParam {
 	std::map<std::string, dvec<EMBED_SIZE> *> lookUpTable;
